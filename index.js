@@ -5,16 +5,30 @@ const cors = require('cors');
 const app = express()
 const port = 3000
 
-let dataMessage = [
+let ContextTable = [
   {
     message: ["Hello", "Hi"],
-    convert: 'Welcome'
+    context: 'Welcome to StationFive.'
   },
   {
     message: ["Goodbye", "bye"],
-    convert: 'Thank You'
+    context: 'Thank you, see you around.'
+  },
+  {
+    message: [],
+    context: 'Sorry, I don’t understand.'
   },
 ];
+
+const getContext = (messageArray) => {
+  for(let i = 0; i < ContextTable.length; i++) {
+    const { message } = ContextTable[i];
+    if (message.some(i => messageArray.includes(i))) {
+      return ContextTable[i].context;
+    }
+  }
+  return '';
+}
 
 
 app.use(cors());
@@ -26,24 +40,24 @@ app.get('/', (req, res) => {
   res.send('Hello World, from express');
 });
 
-app.post('/book', (req, res) => {
+app.post('/message', (req, res) => {
   const message = req.body.message;
+  const conversation_id = req.body.conversation_id;
   
-  const convertArray = message.split(" ");
-  let stage = [];
-  convertArray.forEach((item, key) => {
-    if (item.includes(dataMessage[0].message[0]) || item.includes(dataMessage[0].message[1])) {
-      stage = 0
-    } 
-    if (item.includes(dataMessage[1].message[0]) || item.includes(dataMessage[1].message[1])) {
-      stage = 1
-    } 
-  });
-  convertArray[0] = dataMessage[stage].convert;
-  const response = convertArray.join(" ");
-  res.json({
-    message: response
-  });
+  const messageArray = message.split(" ");
+  let contextResponse = getContext(messageArray);
+
+  if (contextResponse === '') {
+    const validationRes = ContextTable.find(o => o.message.length === 0);
+    contextResponse = validationRes.context;
+  };
+
+  const response = {
+    response_id: conversation_id,
+    response: contextResponse
+  }
+
+  res.json(response);
 });
 
 
